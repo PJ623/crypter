@@ -13,6 +13,8 @@
         output: process.stdout
     });
 
+    const designatedDir = __dirname + "/collection";
+
     function decrypt(encrypted) {
         let decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), Buffer.from(encrypted.iv, "hex"));
         let decrypted = decipher.update(Buffer.from(encrypted.encryptedData, "hex"));
@@ -28,26 +30,28 @@
     }
 
     function decryptAll() {
-        let collection = fs.readdirSync("collection");
+        let collection = fs.readdirSync(designatedDir);
         for (let i = 0; i < collection.length; i++) {
-            let entry = fs.readFileSync(__dirname + "/collection/" + collection[i].toString());
+            let entry = fs.readFileSync(designatedDir + "/" + collection[i].toString());
             try {
-                if (JSON.parse(entry).iv) {
-                    fs.writeFileSync(__dirname + "/collection/" + collection[i].toString(), decrypt(JSON.parse(entry)));
-                    console.log(collection[i].toString() + " is now decrypted.");
+                if (collection[i] != ".keep" && JSON.parse(entry).iv) {
+                    fs.writeFileSync(designatedDir + "/" + collection[i].toString(), decrypt(JSON.parse(entry)));
+                    console.log("'" + collection[i].toString() + "' is now decrypted.");
                 }
             } catch (e) {
-                console.log(collection[i].toString() + " did not need to be decrypted.");
+                console.log("'" + collection[i].toString() + "' did not need to be decrypted.");
             }
         }
     }
 
     function encryptAll() {
-        let collection = fs.readdirSync("collection");
+        let collection = fs.readdirSync(designatedDir);
         for (let i = 0; i < collection.length; i++) {
-            let entry = fs.readFileSync(__dirname + "/collection/" + collection[i].toString());
-            fs.writeFileSync(__dirname + "/collection/" + collection[i].toString(), JSON.stringify(encrypt(entry)));
-            console.log(collection[i].toString() + " is now encrypted.");
+            let entry = fs.readFileSync(designatedDir + "/" + collection[i].toString());
+            if (collection[i] != ".keep") {
+                fs.writeFileSync(designatedDir + "/" + collection[i].toString(), JSON.stringify(encrypt(entry)));
+                console.log("'" + collection[i].toString() + "' is now encrypted.");
+            }
         }
     }
 
@@ -65,6 +69,7 @@
     rl.on("line", function (line) {
         switch (line.toLowerCase()) {
             case "bye":
+            case "goodbye":
             case "exit":
             case "gg":
             case "q":
