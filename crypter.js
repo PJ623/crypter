@@ -110,8 +110,7 @@
         }
         data = JSON.parse(data);
 
-        // If the property 'password' exists in 'initial.json', then Crypter has yet to initialize.
-        if (/*data.hasOwnProperty("password") &&*/ !data.hasOwnProperty("passHash")) {
+        if (!data.hasOwnProperty("passHash")) {
             console.log("Crypter is initializing...");
 
             function initialize(password) {
