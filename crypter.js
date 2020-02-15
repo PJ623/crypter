@@ -102,7 +102,6 @@
         });
     };
 
-    // Initialize Crypter using settings from 'initial.json'.
     fs.readFile(__dirname + "/initial.json", function (err, data) {
         if (err) {
             console.log("'initial.json' cannot be found. Crypter is closing.");
@@ -114,7 +113,7 @@
             console.log("Crypter is initializing...");
 
             function initialize(password) {
-                data.passHash = crypto.createHash("md5").update(/*data.*/password, "utf8").digest("hex");
+                data.passHash = crypto.createHash("md5").update(password, "utf8").digest("hex");
                 fs.writeFile(__dirname + "/initial.json", JSON.stringify(data), function () {
                     console.log("Crypter has finished initializing.");
                     verify(data.passHash);
