@@ -1,10 +1,9 @@
 (function Crypter() {
-
     const fs = require("fs");
 
     const crypto = require("crypto");
     const algorithm = "aes-256-cbc";
-    const key = "passwordpasswordpasswordpassword";
+    const key = "passwordpasswordpasswordpassword"; // TODO: generate and preserve generation
     const iv = crypto.randomBytes(16);
 
     const readline = require("readline");
@@ -55,38 +54,80 @@
         }
     }
 
+    function open() {
+        console.log("Welcome to Crypter.");
+        decryptAll();
+    };
+
     function close() {
         encryptAll();
         console.log("Goodbye!");
         rl.close();
     }
 
-    (function open() {
-        console.log("Hello!");
-        decryptAll();
-    })();
+    function verify(passHash) {
+        rl.question("What is the password?\n", function (answer) {
+            answer = crypto.createHash("md5").update(answer, "utf8").digest("hex");
 
-    rl.on("line", function (line) {
-        switch (line.toLowerCase()) {
-            case "bye":
-            case "goodbye":
-            case "exit":
-            case "gg":
-            case "q":
-            case "quit":
-            case "abort":
-            case "stop":
-            case "close":
-            case "end":
-                close();
-                break;
-            default:
-                console.log("Sorry, I don't understand what '" + line + "' means.");
-                break;
+            if (answer == passHash) {
+                open();
+
+                rl.on("line", function (line) {
+                    switch (line.toLowerCase()) {
+                        case "bye":
+                        case "goodbye":
+                        case "exit":
+                        case "gg":
+                        case "q":
+                        case "quit":
+                        case "abort":
+                        case "stop":
+                        case "close":
+                        case "end":
+                            close();
+                            break;
+                        default:
+                            console.log("Sorry, I don't understand what '" + line + "' means.");
+                            break;
+                    }
+                });
+
+                rl.on("SIGINT", function () {
+                    close();
+                });
+            } else {
+                console.log("Your answer is incorrect.");
+                verify(passHash);
+            }
+        });
+    };
+
+    // Initialize Crypter using settings from 'initial.json'.
+    fs.readFile(__dirname + "/initial.json", function (err, data) {
+        if (err) {
+            console.log("'initial.json' cannot be found. Crypter is closing.");
+            process.exit();
         }
-    });
+        data = JSON.parse(data);
 
-    rl.on("SIGINT", function () {
-        close();
+        // If the property 'password' exists in 'initial.json', then Crypter has yet to initialize.
+        if (/*data.hasOwnProperty("password") &&*/ !data.hasOwnProperty("passHash")) {
+            console.log("Crypter is initializing...");
+
+            function initialize(password) {
+                data.passHash = crypto.createHash("md5").update(/*data.*/password, "utf8").digest("hex");
+                fs.writeFile(__dirname + "/initial.json", JSON.stringify(data), function () {
+                    console.log("Crypter has finished initializing.");
+                    verify(data.passHash);
+                });
+            }
+
+            rl.question("Set your password: ", function (password) {
+                console.log("Thank you.");
+                initialize(password);
+            });
+        } else {
+            verify(data.passHash);
+        }
     });
 })();
