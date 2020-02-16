@@ -2,9 +2,6 @@
     const fs = require("fs");
 
     const crypto = require("crypto");
-    //const algorithm = "aes-256-cbc";
-    //const key = crypto.randomBytes(32);/*"passwordpasswordpasswordpassword";*/ // TODO: generate and preserve generation
-    //const iv = crypto.randomBytes(16);
 
     const readline = require("readline");
     const rl = readline.createInterface({
@@ -62,7 +59,7 @@
 
             if (answer == passHash) {
                 const cryptoSuite = createCryptoSuite("aes-256-cbc", passHash.slice(0, 32));
-                
+
                 function open() {
                     console.log("Welcome to Crypter.");
                     cryptoSuite.decryptAll();
