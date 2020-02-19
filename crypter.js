@@ -63,7 +63,7 @@
                             let cipher = crypto.createCipheriv(algorithm, Buffer.from(key), Buffer.from(iv));
                             let encrypted = cipher.update(buffer);
                             encrypted = Buffer.concat([encrypted, cipher.final()]);
-                            return { iv: Buffer.from(iv).toString("hex"), encryptedData: encrypted.toString("hex") }; //{iv: iv.toString("hex"), data: encrypted.toString("hex")} // returns a buffer
+                            return { iv: Buffer.from(iv).toString("hex"), encryptedData: encrypted.toString("hex") };
                         }
 
                         for (let i = 0; i < collection.length; i++) {
