@@ -13,9 +13,9 @@
 
     function createCryptoSuite(algorithm, key) {
         const iv = crypto.randomBytes(16);
-        return {
-            decryptAll: function decryptAll() {
-                fs.readdir(designatedDir, function (err, collection) {
+        const cryptoSuite = {
+            decryptAll: function decryptAll(designatedDir) {
+                fs.readdir(designatedDir, { withFileTypes: true }, function (err, collection) {
                     if (err) {
                         console.log("Error reading files:", err);
                     } else {
@@ -27,32 +27,35 @@
                         }
 
                         for (let i = 0; i < collection.length; i++) {
-                            if (collection[i] != ".keep") {
-
-                                fs.readFile(designatedDir + "/" + collection[i].toString(), function (err, entry) {
-                                    if (err) {
-                                        console.log("Error reading file:", err);
-                                    }
-                                    try {
-                                        if (JSON.parse(entry).iv) {
-                                            fs.writeFile(designatedDir + "/" + collection[i].toString(), decrypt(JSON.parse(entry)), function (err) {
-                                                if (err) {
-                                                    console.log("Error saving file:", err);
-                                                }
-                                            });
-                                            console.log("'" + collection[i].toString() + "' is now decrypted.");
+                            if (collection[i].name != ".keep") {
+                                if (collection[i].isDirectory()) {
+                                    cryptoSuite.decryptAll(designatedDir + "/" + collection[i].name);
+                                } else {
+                                    fs.readFile(designatedDir + "/" + collection[i].name, function (err, entry) {
+                                        if (err) {
+                                            console.log("Error reading file:", err);
                                         }
-                                    } catch (e) {
-                                        console.log("'" + collection[i].toString() + "' did not need to be decrypted.");
-                                    }
-                                });
+                                        try {
+                                            if (JSON.parse(entry).iv) {
+                                                fs.writeFile(designatedDir + "/" + collection[i].name, decrypt(JSON.parse(entry)), function (err) {
+                                                    if (err) {
+                                                        console.log("Error saving file:", err);
+                                                    }
+                                                });
+                                                console.log("'" + collection[i].name + "' is now decrypted.");
+                                            }
+                                        } catch (e) {
+                                            console.log("'" + collection[i].name + "' did not need to be decrypted.");
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
                 });
             },
-            encryptAll: function encryptAll() {
-                fs.readdir(designatedDir, function (err, collection) {
+            encryptAll: function encryptAll(designatedDir) {
+                fs.readdir(designatedDir, { withFileTypes: true }, function (err, collection) {
                     if (err) {
                         console.log("Error reading files:", err);
                     } else {
@@ -65,24 +68,31 @@
 
                         for (let i = 0; i < collection.length; i++) {
                             if (collection[i] != ".keep") {
-                                fs.readFile(designatedDir + "/" + collection[i].toString(), function (err, entry) {
-                                    if (err) {
-                                        console.log("Error reading file:", err);
-                                    } else {
-                                        fs.writeFile(designatedDir + "/" + collection[i].toString(), JSON.stringify(encrypt(entry)), function (err) {
-                                            if (err) {
-                                                console.log("Error saving file:", err);
-                                            }
-                                        });
-                                        console.log("'" + collection[i].toString() + "' is now encrypted.");
-                                    }
-                                });
+                                if (collection[i].isDirectory()) {
+                                    cryptoSuite.encryptAll(designatedDir + "/" + collection[i].name);
+                                } else {
+                                    fs.readFile(designatedDir + "/" + collection[i].name, function (err, entry) {
+                                        if (err) {
+                                            console.log("Error reading file:", err);
+                                        } else {
+                                            fs.writeFile(designatedDir + "/" + collection[i].name, JSON.stringify(encrypt(entry)), function (err) {
+                                                if (err) {
+                                                    console.log("Error saving file:", err);
+                                                }
+                                            });
+                                            console.log("'" + collection[i].name + "' is now encrypted.");
+                                        }
+                                    });
+                                }
                             }
                         }
+
                     }
                 });
             }
         }
+
+        return cryptoSuite;
     }
 
     function verify(passHash) {
@@ -94,11 +104,11 @@
 
                 function open() {
                     console.log("Welcome to Crypter.");
-                    cryptoSuite.decryptAll();
+                    cryptoSuite.decryptAll(designatedDir);
                 };
 
                 function close() {
-                    cryptoSuite.encryptAll();
+                    cryptoSuite.encryptAll(designatedDir);
                     console.log("Goodbye!");
                     rl.close();
                 }
