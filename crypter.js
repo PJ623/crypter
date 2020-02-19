@@ -67,7 +67,7 @@
                         }
 
                         for (let i = 0; i < collection.length; i++) {
-                            if (collection[i] != ".keep") {
+                            if (collection[i].name != ".keep") {
                                 if (collection[i].isDirectory()) {
                                     cryptoSuite.encryptAll(designatedDir + "/" + collection[i].name);
                                 } else {
