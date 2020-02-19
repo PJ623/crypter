@@ -14,41 +14,73 @@
     function createCryptoSuite(algorithm, key) {
         const iv = crypto.randomBytes(16);
         return {
-            decrypt: function decrypt(encrypted) {
-                let decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), Buffer.from(encrypted.iv, "hex"));
-                let decrypted = decipher.update(Buffer.from(encrypted.encryptedData, "hex"));
-                decrypted = Buffer.concat([decrypted, decipher.final()]);
-                return decrypted;
-            },
-            encrypt: function encrypt(buffer) {
-                let cipher = crypto.createCipheriv(algorithm, Buffer.from(key), Buffer.from(iv));
-                let encrypted = cipher.update(buffer);
-                encrypted = Buffer.concat([encrypted, cipher.final()]);
-                return { iv: Buffer.from(iv).toString("hex"), encryptedData: encrypted.toString("hex") }; //{iv: iv.toString("hex"), data: encrypted.toString("hex")} // returns a buffer
-            },
             decryptAll: function decryptAll() {
-                let collection = fs.readdirSync(designatedDir);
-                for (let i = 0; i < collection.length; i++) {
-                    let entry = fs.readFileSync(designatedDir + "/" + collection[i].toString());
-                    try {
-                        if (collection[i] != ".keep" && JSON.parse(entry).iv) {
-                            fs.writeFileSync(designatedDir + "/" + collection[i].toString(), this.decrypt(JSON.parse(entry)));
-                            console.log("'" + collection[i].toString() + "' is now decrypted.");
+                fs.readdir(designatedDir, function (err, collection) {
+                    if (err) {
+                        console.log("Error reading files:", err);
+                    } else {
+                        function decrypt(encrypted) {
+                            let decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), Buffer.from(encrypted.iv, "hex"));
+                            let decrypted = decipher.update(Buffer.from(encrypted.encryptedData, "hex"));
+                            decrypted = Buffer.concat([decrypted, decipher.final()]);
+                            return decrypted;
                         }
-                    } catch (e) {
-                        console.log("'" + collection[i].toString() + "' did not need to be decrypted.");
+
+                        for (let i = 0; i < collection.length; i++) {
+                            if (collection[i] != ".keep") {
+
+                                fs.readFile(designatedDir + "/" + collection[i].toString(), function (err, entry) {
+                                    if (err) {
+                                        console.log("Error reading file:", err);
+                                    }
+                                    try {
+                                        if (JSON.parse(entry).iv) {
+                                            fs.writeFile(designatedDir + "/" + collection[i].toString(), decrypt(JSON.parse(entry)), function (err) {
+                                                if (err) {
+                                                    console.log("Error saving file:", err);
+                                                }
+                                            });
+                                            console.log("'" + collection[i].toString() + "' is now decrypted.");
+                                        }
+                                    } catch (e) {
+                                        console.log("'" + collection[i].toString() + "' did not need to be decrypted.");
+                                    }
+                                });
+                            }
+                        }
                     }
-                }
+                });
             },
             encryptAll: function encryptAll() {
-                let collection = fs.readdirSync(designatedDir);
-                for (let i = 0; i < collection.length; i++) {
-                    let entry = fs.readFileSync(designatedDir + "/" + collection[i].toString());
-                    if (collection[i] != ".keep") {
-                        fs.writeFileSync(designatedDir + "/" + collection[i].toString(), JSON.stringify(this.encrypt(entry)));
-                        console.log("'" + collection[i].toString() + "' is now encrypted.");
+                fs.readdir(designatedDir, function (err, collection) {
+                    if (err) {
+                        console.log("Error reading files:", err);
+                    } else {
+                        function encrypt(buffer) {
+                            let cipher = crypto.createCipheriv(algorithm, Buffer.from(key), Buffer.from(iv));
+                            let encrypted = cipher.update(buffer);
+                            encrypted = Buffer.concat([encrypted, cipher.final()]);
+                            return { iv: Buffer.from(iv).toString("hex"), encryptedData: encrypted.toString("hex") }; //{iv: iv.toString("hex"), data: encrypted.toString("hex")} // returns a buffer
+                        }
+
+                        for (let i = 0; i < collection.length; i++) {
+                            if (collection[i] != ".keep") {
+                                fs.readFile(designatedDir + "/" + collection[i].toString(), function (err, entry) {
+                                    if (err) {
+                                        console.log("Error reading file:", err);
+                                    } else {
+                                        fs.writeFile(designatedDir + "/" + collection[i].toString(), JSON.stringify(encrypt(entry)), function (err) {
+                                            if (err) {
+                                                console.log("Error saving file:", err);
+                                            }
+                                        });
+                                        console.log("'" + collection[i].toString() + "' is now encrypted.");
+                                    }
+                                });
+                            }
+                        }
                     }
-                }
+                });
             }
         }
     }
